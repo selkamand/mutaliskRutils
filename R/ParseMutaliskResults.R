@@ -190,7 +190,7 @@ plotStackedBarInteractive <- function(mutalisk_dataframe, lump_type = "min_prop"
 #' @return a ggplot object
 #' @export
 #'
-plotDistributionOfSignatureContributions <- function(mutalisk_dataframe){
+plotSignatureContributionJitterplot <- function(mutalisk_dataframe){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
 
   levels(mutalisk_dataframe$Signatures) <- gtools::mixedsort(levels((mutalisk_dataframe$Signatures)))
