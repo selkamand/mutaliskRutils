@@ -19,6 +19,7 @@ Imports:
     forcats,
     ggplot2,
     ggthemes,
+    gtools,
     magrittr,
     pals,
     plotly,

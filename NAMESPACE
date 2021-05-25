@@ -2,6 +2,8 @@
 
 export("%>%")
 export(extractSampleNamesFromMutaliskFilenames)
+export(mutaliskBestSigatureDirectoryToDataframe)
 export(mutaliskToDataFrame)
+export(plotDistributionOfSignatureContributions)
 export(plotStackedBar)
 importFrom(magrittr,"%>%")

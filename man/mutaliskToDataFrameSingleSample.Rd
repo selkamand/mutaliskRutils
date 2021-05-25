@@ -10,7 +10,7 @@ mutaliskToDataFrameSingleSample(mutalisk_files)
 \item{mutalisk_files}{a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort}
 }
 \value{
-table
+tibble
 }
 \description{
 You probably want to use tags$strong{mutaliskToDataFrame} instead.

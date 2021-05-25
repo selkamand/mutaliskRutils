@@ -6,13 +6,13 @@
 #'
 #' @param mutalisk_files a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
 #'
-#' @return table
+#' @return tibble
 #'
 mutaliskToDataFrameSingleSample <- function(mutalisk_files){
   mutfile_v = readLines(mutalisk_files)
   sig_numbers_s = mutfile_v[grep(pattern = "\\*\\*THIS_SIGs ", x = mutfile_v)][1]
   sig_numbers_s = sig_numbers_s %>% strsplit(" ") %>% unlist()
-  sig_numbers_f = sig_numbers_s[-1]
+  sig_numbers_f = sig_numbers_s[-1] %>% as.factor()
 
   sig_contributions_s = mutfile_v[grep(pattern = "\\*\\*THIS_SIG_CONTRIBUTIONS ", x = mutfile_v)][1]
   sig_contributions_s = sig_contributions_s %>% strsplit(" ") %>% unlist()
@@ -52,6 +52,25 @@ extractSampleNamesFromMutaliskFilenames  <- function(mutalisk_filenames){
     return()
 }
 
+#' Mutalisk directory to dataframe
+#'
+#'
+#' @param directory path to \strong{mutalisk_best_fit} folder.
+#' To obtain, run your VCFs through mutalisk. Select Mutational Signature (Best only) and click 'Get the selected result for all samples at once'.
+#' Then unzip the file, and youre ready to go
+#'
+#'
+#' @return tibble
+#' @export
+#'
+mutaliskBestSigatureDirectoryToDataframe <- function(directory){
+ checkmate::assert_directory_exists(directory)
+
+  filenames = dir(full.names = TRUE, path = directory, pattern = "mutalisk_input.*\\.txt$")
+  mutaliskToDataFrame(filenames)
+}
+
+
 #' Cohort-Level Mutational Signature Visualisation
 #'
 #' A note of warning: for different mutalisk runs, this function will not enforce uniform colours for a single mutational signature. Better to get all data in at once and add a facet_wrap call
@@ -68,11 +87,16 @@ extractSampleNamesFromMutaliskFilenames  <- function(mutalisk_filenames){
 #' @param pal Palette to use for generating colours.
 #' @param facet_column name of column to use for faceting (string)
 #' @param facet_ncol number of columns in faceted plot (number)
+#' @param fontsize_strip fontsize of facet titles (number)
+#' @param fontsize_axis_title fontsize of axis titles (number)
 #' @return a ggplot (gg)
 #' @export
-plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, facet_ncol = 1){
+plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, facet_ncol = 1, fontsize_strip = 18, fontsize_axis_title = 18){
+  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
+  checkmate::assert_number(fontsize_strip)
+  checkmate::assert_number(fontsize_axis_title)
 
   if(is.na(legend_direction))
     legend_direction = ifelse(legend=="right" | legend == "left", yes = "vertical", no = "horizontal")
@@ -134,8 +158,8 @@ plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=
         ggplot2::labs(fill = "Signature") +
         ggthemes::theme_fivethirtyeight() +
         ggplot2::theme(legend.position = legend, legend.direction = "vertical") +
-        ggplot2::theme(axis.title = ggplot2::element_text(face = "bold", size = 14)) +
-        ggplot2::theme(strip.text.x = ggplot2::element_text(face = "bold", size = 12)) +
+        ggplot2::theme(axis.title = ggplot2::element_text(face = "bold", size = fontsize_axis_title)) +
+        ggplot2::theme(strip.text= ggplot2::element_text(face = "bold", size = fontsize_strip), strip.background = ggplot2::element_blank()) +
         ggplot2::theme(panel.background = ggplot2::element_blank(), plot.background = ggplot2::element_blank())
 
   if(!is.na(facet_column)){
@@ -147,7 +171,6 @@ plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=
       return(gg)
 }
 
-
 #' Cohort-Level Mutational Signature Visualisation
 #'
 #' @inherit plotStackedBar
@@ -158,4 +181,50 @@ plotStackedBarInteractive <- function(mutalisk_dataframe, lump_type = "min_prop"
     return()
 }
 
+
+#' Plot Signature-Level Dotplot
+#' Plots a signature-Level dotplot
+#'
+#' @inheritParams plotStackedBar
+#'
+#' @return a ggplot object
+#' @export
+#'
+plotDistributionOfSignatureContributions <- function(mutalisk_dataframe){
+  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+
+  levels(mutalisk_dataframe$Signatures) <- gtools::mixedsort(levels((mutalisk_dataframe$Signatures)))
+
+  mutalisk_dataframe <- mutaliskDataframeExpand(mutalisk_dataframe)
+
+  mutalisk_dataframe %>%
+    ggplot2::ggplot(ggplot2::aes(Signatures, Contributions)) +
+    ggplot2::geom_jitter(width = 0.1, alpha = 0.5) +
+    ggplot2::stat_summary(
+      fun = median, fun.min = median, fun.max = median,
+      geom = "crossbar", color = "red", width = 0.7, lwd = 0.4) +
+    ggplot2::theme_bw()
+}
+
+#' Expand mutalisk_dataframe
+#'
+#' In normal mutalisk dataframe, each sample has data for ONLY the 1-7 signatures that comprise the 'best fit'.
+#' This means that a signature level jitterplot won't show the samples where it was not included in this 'best fit' set, when we'd actually want to know that it contributed 0% to that sample.
+#' This function fixes the issue by adding entries for ALL signature - sample pairs, with Contributions set to 0% where relevant.
+#'
+#' @inheritParams plotStackedBar
+#'
+#' @return dataframe containing all combinations of Sample ID and Signatures.
+#' For cases where a signature was not included in the 'best fit' subset, Contribution is set to 0%.
+#'
+mutaliskDataframeExpand <- function(mutalisk_dataframe){
+  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+
+  expand.grid(Signatures=unique(mutalisk_dataframe$Signatures),SampleID=unique(mutalisk_dataframe$SampleID)) %>%
+      dplyr::mutate(Contributions = sapply(seq_along(Signatures),
+                                           function(row_num) {
+                                             res = mutalisk_dataframe[mutalisk_dataframe$Signatures == Signatures[row_num] & mutalisk_dataframe$SampleID == SampleID[row_num], "Contributions"] %>% unlist()
+                                             ifelse(length(res) < 1, 0, res)
+                                             }))
+}
 

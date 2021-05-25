@@ -13,7 +13,9 @@ plotStackedBar(
   legend_direction = NA,
   pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67,
   facet_column = NA,
-  facet_ncol = 1
+  facet_ncol = 1,
+  fontsize_strip = 18,
+  fontsize_axis_title = 18
 )
 }
 \arguments{
@@ -37,6 +39,10 @@ plotStackedBar(
 \item{facet_column}{name of column to use for faceting (string)}
 
 \item{facet_ncol}{number of columns in faceted plot (number)}
+
+\item{fontsize_strip}{fontsize of facet titles (number)}
+
+\item{fontsize_axis_title}{fontsize of axis titles (number)}
 }
 \value{
 a ggplot (gg)
