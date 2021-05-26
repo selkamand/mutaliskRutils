@@ -15,6 +15,7 @@ For cases where a signature was not included in the 'best fit' subset, Contribut
 }
 \description{
 In normal mutalisk dataframe, each sample has data for ONLY the 1-7 signatures that comprise the 'best fit'.
+Bascically, we end up with a dataframe where not all signatures have entries for all samples. We call this 'implicit' missing values.
 This means that a signature level jitterplot won't show the samples where it was not included in this 'best fit' set, when we'd actually want to know that it contributed 0\% to that sample.
 This function fixes the issue by adding entries for ALL signature - sample pairs, with Contributions set to 0\% where relevant.
 }

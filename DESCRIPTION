@@ -23,4 +23,5 @@ Imports:
     magrittr,
     pals,
     plotly,
-    purrr
+    purrr,
+    tidyr

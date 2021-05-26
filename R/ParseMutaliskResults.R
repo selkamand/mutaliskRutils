@@ -209,6 +209,7 @@ plotSignatureContributionJitterplot <- function(mutalisk_dataframe){
 #' Expand mutalisk_dataframe
 #'
 #' In normal mutalisk dataframe, each sample has data for ONLY the 1-7 signatures that comprise the 'best fit'.
+#' Bascically, we end up with a dataframe where not all signatures have entries for all samples. We call this 'implicit' missing values.
 #' This means that a signature level jitterplot won't show the samples where it was not included in this 'best fit' set, when we'd actually want to know that it contributed 0% to that sample.
 #' This function fixes the issue by adding entries for ALL signature - sample pairs, with Contributions set to 0% where relevant.
 #'
@@ -220,11 +221,9 @@ plotSignatureContributionJitterplot <- function(mutalisk_dataframe){
 mutaliskDataframeExpand <- function(mutalisk_dataframe){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
 
-  expand.grid(Signatures=unique(mutalisk_dataframe$Signatures),SampleID=unique(mutalisk_dataframe$SampleID)) %>%
-      dplyr::mutate(Contributions = sapply(seq_along(Signatures),
-                                           function(row_num) {
-                                             res = mutalisk_dataframe[mutalisk_dataframe$Signatures == Signatures[row_num] & mutalisk_dataframe$SampleID == SampleID[row_num], "Contributions"] %>% unlist()
-                                             ifelse(length(res) < 1, 0, res)
-                                             }))
+  #Make implicit missing values explicit
+  mutalisk_dataframe %>%
+    tidyr::complete(Signatures, SampleID, fill = list(Contributions = 0)) %>%
+    return()
 }
 
