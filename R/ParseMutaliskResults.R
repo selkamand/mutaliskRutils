@@ -1,15 +1,19 @@
 
 #' Mutalisk to dataframe
 #'
-#' You probably want to use tags$strong{mutaliskToDataFrame} instead.
-#' See ?mutaliskToDataFrame
+#' You probably want to use tags$strong{mutalisk_to_dataframe} instead.
+#' See ?mutalisk_to_dataframe
 #'
-#' @param mutalisk_files a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
+#' @param mutalisk_file a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
 #'
 #' @return tibble
 #'
-mutaliskToDataFrameSingleSample <- function(mutalisk_files){
-  mutfile_v = readLines(mutalisk_files)
+mutalisk_to_dataframe_single_sample <- function(mutalisk_file){
+  mutfile_v = readLines(mutalisk_file)
+
+  #Ensure file is mutalisk file
+  checkmate::assert_set_equal(mutfile_v[1], y ="#####SIGNATURE DECOMPOSITION REPORT", .var.name = paste0("First line of mutfile: ", mutalisk_file))
+
   sig_numbers_s = mutfile_v[grep(pattern = "\\*\\*THIS_SIGs ", x = mutfile_v)][1]
   sig_numbers_s = sig_numbers_s %>% strsplit(" ") %>% unlist()
   sig_numbers_f = sig_numbers_s[-1] %>% as.factor()
@@ -18,7 +22,7 @@ mutaliskToDataFrameSingleSample <- function(mutalisk_files){
   sig_contributions_s = sig_contributions_s %>% strsplit(" ") %>% unlist()
   sig_contributions_n = sig_contributions_s[-1] %>% as.numeric()
 
-  patient_id_s = extractSampleNamesFromMutaliskFilenames(mutalisk_files)
+  patient_id_s = extract_sample_names_from_mutalisk_filenames(mutalisk_file)
   data.frame(SampleID = rep(patient_id_s, times = length(sig_numbers_f)), Signatures = sig_numbers_f, Contributions =  sig_contributions_n) %>%
     dplyr::tibble()
 }
@@ -35,8 +39,9 @@ mutaliskToDataFrameSingleSample <- function(mutalisk_files){
 #' }
 #' @export
 #'
-mutaliskToDataFrame <- function(mutalisk_files){
-  purrr::map_dfr(mutalisk_files,mutaliskToDataFrameSingleSample)
+mutalisk_to_dataframe <- function(mutalisk_files){
+  df=purrr::map_dfr(mutalisk_files,mutalisk_to_dataframe_single_sample)
+  return(df)
 }
 
 #' Sample Names From Mutalisk Output
@@ -44,7 +49,7 @@ mutaliskToDataFrame <- function(mutalisk_files){
 #'
 #' @return sample name (string)
 #' @export
-extractSampleNamesFromMutaliskFilenames  <- function(mutalisk_filenames){
+extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
   checkmate::assert_character(mutalisk_filenames)
   basename(mutalisk_filenames) %>%
     sub(pattern = ".*mutalisk_input_(.*?)\\..*$", replacement = "\\1", x =  mutalisk_filenames) %>%
@@ -58,16 +63,24 @@ extractSampleNamesFromMutaliskFilenames  <- function(mutalisk_filenames){
 #' @param directory path to \strong{mutalisk_best_fit} folder.
 #' To obtain, run your VCFs through mutalisk. Select Mutational Signature (Best only) and click 'Get the selected result for all samples at once'.
 #' Then unzip the file, and youre ready to go
-#'
+#' @inheritParams mutalisk_dataframe_inform_user_of_metadata
 #'
 #' @return tibble
 #' @export
 #'
-mutaliskBestSigatureDirectoryToDataframe <- function(directory){
+mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata_file = NA){
  checkmate::assert_directory_exists(directory)
 
   filenames = dir(full.names = TRUE, path = directory, pattern = "mutalisk_input.*\\.txt$")
-  mutaliskToDataFrame(filenames)
+
+  df = mutalisk_to_dataframe(filenames)
+
+  if(!is.na(metadata_file)){
+    df = mutalisk_dataframe_inform_user_of_metadata(df, metadata_file)
+  }
+
+
+  return(df)
 }
 
 
@@ -75,7 +88,7 @@ mutaliskBestSigatureDirectoryToDataframe <- function(directory){
 #'
 #' A note of warning: for different mutalisk runs, this function will not enforce uniform colours for a single mutational signature. Better to get all data in at once and add a facet_wrap call
 #'
-#' @param mutalisk_dataframe a dataframe produced using mutaliskToDataFrame
+#' @param mutalisk_dataframe a dataframe produced using mutalisk_to_dataframe
 #' @param lump_type one of "min_prop", "topn", or "none".
 #'
 #' \strong{min_prop} will allow lump together all signatures that contribute less than \strong{lump_min}.
@@ -91,7 +104,7 @@ mutaliskBestSigatureDirectoryToDataframe <- function(directory){
 #' @param fontsize_axis_title fontsize of axis titles (number)
 #' @return a ggplot (gg)
 #' @export
-plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, facet_ncol = 1, fontsize_strip = 18, fontsize_axis_title = 18){
+plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, facet_ncol = 1, fontsize_strip = 18, fontsize_axis_title = 18){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
@@ -168,16 +181,19 @@ plotStackedBar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=
 
     gg <- gg + ggplot2::facet_wrap(facets = facet_column, ncol = facet_ncol, scales = "free_y")
   }
+
+  mutalisk_dataframe_metadata_column_message(mutalisk_dataframe)
+
       return(gg)
 }
 
 #' Cohort-Level Mutational Signature Visualisation
 #'
-#' @inherit plotStackedBar
+#' @inherit plot_stacked_bar
 #'
 #' @return plotly visualisation
-plotStackedBarInteractive <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="top"){
-  plotly::ggplotly(plotStackedBar(mutalisk_dataframe, lump_type = lump_type, lump_min=lump_min, topn = topn, legend=legend)) %>%
+plot_stacked_bar_interactive <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="top"){
+  plotly::ggplotly(plot_stacked_bar(mutalisk_dataframe, lump_type = lump_type, lump_min=lump_min, topn = topn, legend=legend)) %>%
     return()
 }
 
@@ -185,17 +201,19 @@ plotStackedBarInteractive <- function(mutalisk_dataframe, lump_type = "min_prop"
 #' Plot Signature-Level Dotplot
 #' Plots a signature-Level dotplot
 #'
-#' @inheritParams plotStackedBar
+#' @inheritParams plot_stacked_bar
 #'
 #' @return a ggplot object
 #' @export
 #'
-plotSignatureContributionJitterplot <- function(mutalisk_dataframe){
+plot_signature_contribution_jitterplot <- function(mutalisk_dataframe){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
 
   levels(mutalisk_dataframe$Signatures) <- gtools::mixedsort(levels((mutalisk_dataframe$Signatures)))
 
-  mutalisk_dataframe <- mutaliskDataframeExpand(mutalisk_dataframe)
+  mutalisk_dataframe <- mutalisk_dataframe_expand(mutalisk_dataframe)
+
+  mutalisk_dataframe_metadata_column_message(mutalisk_dataframe)
 
   mutalisk_dataframe %>%
     ggplot2::ggplot(ggplot2::aes(Signatures, Contributions)) +
@@ -213,12 +231,12 @@ plotSignatureContributionJitterplot <- function(mutalisk_dataframe){
 #' This means that a signature level jitterplot won't show the samples where it was not included in this 'best fit' set, when we'd actually want to know that it contributed 0% to that sample.
 #' This function fixes the issue by adding entries for ALL signature - sample pairs, with Contributions set to 0% where relevant.
 #'
-#' @inheritParams plotStackedBar
+#' @inheritParams plot_stacked_bar
 #'
 #' @return dataframe containing all combinations of Sample ID and Signatures.
 #' For cases where a signature was not included in the 'best fit' subset, Contribution is set to 0%.
 #'
-mutaliskDataframeExpand <- function(mutalisk_dataframe){
+mutalisk_dataframe_expand <- function(mutalisk_dataframe){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
 
   #Make implicit missing values explicit
@@ -226,4 +244,68 @@ mutaliskDataframeExpand <- function(mutalisk_dataframe){
     tidyr::complete(Signatures, SampleID, fill = list(Contributions = 0)) %>%
     return()
 }
+
+#' Add sample metadata
+#'
+#' Add sample metadata to mutalisk
+#'
+#' @inherit plot_stacked_bar
+#' @param sample_metadata a dataframe containing a SampleID column and additional columns for each property you want to add as metadata (data.frame)
+#'
+#' @return mutalisk dataframe with additional metadata columns (data.frame)
+#' @export
+#'
+mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata){
+  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+  checkmate::assert_names(names(sample_metadata), must.include = c("SampleID"))
+
+  metadata_rows_orig=nrow(sample_metadata)
+  sample_metadata <- sample_metadata %>%
+    dplyr::distinct(SampleID, .keep_all = TRUE) %>%
+    dplyr::filter(!is.na(SampleID))
+
+  if(metadata_rows_orig != nrow(sample_metadata))
+    message("SampleID column in sample metadata table had duplicate SampleIDs or NA values. These have been removed")
+
+  mutalisk_dataframe <- dplyr::left_join(x = mutalisk_dataframe, y = sample_metadata, by = "SampleID")
+}
+
+#' Mutalisk Dataframe
+#'
+#' Adds metadata from a file to the mutalisk dataframe
+#'
+#' @inherit plot_stacked_bar
+#' @param sample_metadata_file path to csv file. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)
+#'
+#' @return mutalisk dataframe with metadata columns (data.frame)
+#' @export
+#'
+mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metadata_file){
+  checkmate::assert_file_exists(metadata_file, access = "r")
+
+  metadata_df <- read.csv(file = metadata_file, header = TRUE)
+  checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata_file))
+  mutalisk_dataframe_add_metadata(mutalisk_dataframe, metadata_df)
+}
+
+#' Mutalisk Dataframe
+#'
+#' Get a vector of metadata columns from a mutalisk_dataframe.
+#'
+#' @inherit plot_stacked_bar
+#'
+#' @return a character vector containing names of metadata columns. If no metadata columns have been added, returns a zero length character vector. (character)
+#' @export
+#'
+mutalisk_dataframe_metadata_column_names <- function(mutalisk_dataframe){
+  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+  metadata_columns = colnames(mutalisk_dataframe) %>% purrr::keep(function(x) !(x %in% c("Signatures", "SampleID", "Contributions")))
+  return(metadata_columns)
+}
+
+mutalisk_dataframe_metadata_column_message <- function(mutalisk_dataframe){
+  col_names = mutalisk_dataframe_metadata_column_names(mutalisk_dataframe)
+  message("Metadata columns: ", ifelse(length(col_names) ==0, "none. To add metadata, use the metadata_file argument of `mutalisk_best_signature_directory_to_dataframe`", paste(col_names, collapse = ", ")))
+}
+
 
