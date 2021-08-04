@@ -4,12 +4,14 @@
 \alias{mutalisk_best_signature_directory_to_dataframe}
 \title{Mutalisk directory to dataframe}
 \usage{
-mutalisk_best_signature_directory_to_dataframe(directory, metadata_file = NA)
+mutalisk_best_signature_directory_to_dataframe(directory, metadata = NA)
 }
 \arguments{
 \item{directory}{path to \strong{mutalisk_best_fit} folder.
 To obtain, run your VCFs through mutalisk. Select Mutational Signature (Best only) and click 'Get the selected result for all samples at once'.
 Then unzip the file, and youre ready to go}
+
+\item{metadata}{Either a path to csv file OR a dataframe. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)}
 }
 \value{
 tibble
