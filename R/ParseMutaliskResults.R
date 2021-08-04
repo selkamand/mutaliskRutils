@@ -79,6 +79,10 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata_f
     df = mutalisk_dataframe_inform_user_of_metadata(df, metadata_file)
   }
 
+  if(nrow(df) == 0) {
+    stop("Failed to find mutalisk files inside directory. Are you sure this is the appropriate mutalisk output?")
+  }
+
 
   return(df)
 }
