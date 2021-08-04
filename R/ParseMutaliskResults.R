@@ -123,11 +123,12 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
 
   if (lump_type == "min_prop") {
     checkmate::assert_number(x = lump_min)
+
     message("Lumping together signatures with contributions < ", lump_min)
     mutalisk_dataframe <- mutalisk_dataframe %>%
       dplyr::group_by(SampleID) %>%
       dplyr::mutate(
-        Signatures = forcats::fct_lump_min(Signatures, w = Contributions, min = 0.1)
+        Signatures = forcats::fct_lump_min(Signatures, w = Contributions, min = lump_min)
       )
     mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
       forcats::fct_relevel("Other", after = Inf) %>%
