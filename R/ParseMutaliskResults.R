@@ -293,7 +293,7 @@ mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metad
     message("Metadata provided as a filepath ... checking if file exists")
     checkmate::assert_file_exists(metadata, access = "r")
     message("    > Metadata file exists")
-    metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
+    metadata_df <- data.table::fread(file = metadata, header = TRUE)
   }
   else if(is.data.frame(metadata)){
     message("Metadata provided as a data.frame")
