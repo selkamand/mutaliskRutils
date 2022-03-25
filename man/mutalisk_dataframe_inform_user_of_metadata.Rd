@@ -7,9 +7,14 @@
 mutalisk_dataframe_inform_user_of_metadata(mutalisk_dataframe, metadata_file)
 }
 \arguments{
-\item{mutalisk_dataframe}{a dataframe produced using mutalisk_to_dataframe}
+\item{mutalisk_dataframe}{a dataframe that can be produced using mutalisk_best_signature_directory_to_dataframe. Can also just make it yourself, if you want to visualise non-mutalisk data. Dataframe just needs 3 columns:
+\enumerate{
+\item \strong{SampleID}: a sample identifier.
+\item \strong{Signatures}: an identifier for a particular signature.
+\item \strong{Contributions}: the percentage contribution of the signature to the patients genetic profile (0.1 = 10\%).
+}}
 
-\item{sample_metadata_file}{path to csv file. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)}
+\item{metadata_file}{path to csv or tsv file. Must contain a header line which contains a SampleID column (or Tumor_Sample_Barcode) that matches that of mutalisk_dataframe (string)}
 }
 \value{
 mutalisk dataframe with metadata columns (data.frame)

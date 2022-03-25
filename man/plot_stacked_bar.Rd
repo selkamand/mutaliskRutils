@@ -9,17 +9,22 @@ plot_stacked_bar(
   lump_type = "min_prop",
   lump_min = 0.1,
   topn = 5,
+  sort_samples_by_sig = NA,
   legend = "right",
   legend_direction = NA,
   pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67,
   facet_column = NA,
-  facet_ncol = 1,
   fontsize_strip = 18,
   fontsize_axis_title = 18
 )
 }
 \arguments{
-\item{mutalisk_dataframe}{a dataframe produced using mutalisk_to_dataframe}
+\item{mutalisk_dataframe}{a dataframe that can be produced using mutalisk_best_signature_directory_to_dataframe. Can also just make it yourself, if you want to visualise non-mutalisk data. Dataframe just needs 3 columns:
+\enumerate{
+\item \strong{SampleID}: a sample identifier.
+\item \strong{Signatures}: an identifier for a particular signature.
+\item \strong{Contributions}: the percentage contribution of the signature to the patients genetic profile (0.1 = 10\%).
+}}
 
 \item{lump_type}{one of "min_prop", "topn", or "none".
 
@@ -37,8 +42,6 @@ plot_stacked_bar(
 \item{pal}{Palette to use for generating colours.}
 
 \item{facet_column}{name of column to use for faceting (string)}
-
-\item{facet_ncol}{number of columns in faceted plot (number)}
 
 \item{fontsize_strip}{fontsize of facet titles (number)}
 

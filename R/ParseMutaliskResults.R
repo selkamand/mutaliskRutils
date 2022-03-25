@@ -84,11 +84,18 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata_f
 }
 
 
+# Plots -------------------------------------------------------------------
+
 #' Cohort-Level Mutational Signature Visualisation
 #'
 #' A note of warning: for different mutalisk runs, this function will not enforce uniform colours for a single mutational signature. Better to get all data in at once and add a facet_wrap call
 #'
-#' @param mutalisk_dataframe a dataframe produced using mutalisk_to_dataframe
+#' @param mutalisk_dataframe a dataframe that can be produced using mutalisk_best_signature_directory_to_dataframe. Can also just make it yourself, if you want to visualise non-mutalisk data. Dataframe just needs 3 columns:
+#' \enumerate{
+#' \item \strong{SampleID}: a sample identifier.
+#' \item \strong{Signatures}: an identifier for a particular signature.
+#' \item \strong{Contributions}: the percentage contribution of the signature to the patients genetic profile (0.1 = 10%).
+#' }
 #' @param lump_type one of "min_prop", "topn", or "none".
 #'
 #' \strong{min_prop} will allow lump together all signatures that contribute less than \strong{lump_min}.
@@ -99,12 +106,11 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata_f
 #' @param legend_direction How should the legend be oriented. By defualt will guess based on position of legend ("vertical", "horizontal")
 #' @param pal Palette to use for generating colours.
 #' @param facet_column name of column to use for faceting (string)
-#' @param facet_ncol number of columns in faceted plot (number)
 #' @param fontsize_strip fontsize of facet titles (number)
 #' @param fontsize_axis_title fontsize of axis titles (number)
 #' @return a ggplot (gg)
 #' @export
-plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, facet_ncol = 1, fontsize_strip = 18, fontsize_axis_title = 18){
+plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, sort_samples_by_sig = NA, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, fontsize_strip = 18, fontsize_axis_title = 18){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
@@ -127,7 +133,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
     mutalisk_dataframe <- mutalisk_dataframe %>%
       dplyr::group_by(SampleID) %>%
       dplyr::mutate(
-        Signatures = forcats::fct_lump_min(Signatures, w = Contributions, min = 0.1)
+        Signatures = forcats::fct_lump_min(Signatures, w = Contributions, min = lump_min)
       )
     mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
       forcats::fct_relevel("Other", after = Inf) %>%
@@ -155,48 +161,43 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
     message("No signatures will be lumped together as 'other'. All signatures in a mutalisk 'best fit' set will be shown.")
   }
 
+  #Reorder signature levels by contribution size:
+  mutalisk_dataframe <- mutalisk_dataframe %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(Signatures = forcats::fct_reorder(Signatures, Contributions, .desc = TRUE))
+
+  #browser()
   gg = mutalisk_dataframe %>% ggplot2::ggplot() +
     ggplot2::geom_col(
       ggplot2::aes(
-        x = SampleID,
-        y = Contributions,
+        y = SampleID,
+        x = Contributions,
         fill = Signatures,
       ), position = "fill") +
-        ggplot2::coord_flip() + ggplot2::xlab("Sample") + ggplot2::ylab("Contribution") +
-        ggplot2::scale_fill_manual(
-          values = c(
-            pal(n = nlevels(mutalisk_dataframe$Signatures) - 1),"Grey"
-          )
-        ) +
-        ggplot2::labs(fill = "Signature") +
-        ggthemes::theme_fivethirtyeight() +
-        ggplot2::theme(legend.position = legend, legend.direction = "vertical") +
-        ggplot2::theme(axis.title = ggplot2::element_text(face = "bold", size = fontsize_axis_title)) +
-        ggplot2::theme(strip.text= ggplot2::element_text(face = "bold", size = fontsize_strip), strip.background = ggplot2::element_blank()) +
-        ggplot2::theme(panel.background = ggplot2::element_blank(), plot.background = ggplot2::element_blank())
+    ggplot2::ylab("Sample") +
+    ggplot2::xlab("Contribution") +
+    ggplot2::scale_fill_manual(
+      values = c(
+        pal(n = nlevels(mutalisk_dataframe$Signatures) - 1),"Grey"
+      )
+    ) +
+    ggplot2::labs(fill = "Signature") +
+    ggthemes::theme_fivethirtyeight() +
+    ggplot2::theme(legend.position = legend, legend.direction = "vertical") +
+    ggplot2::theme(axis.title = ggplot2::element_text(face = "bold", size = fontsize_axis_title)) +
+    ggplot2::theme(strip.text= ggplot2::element_text(face = "bold", size = fontsize_strip), strip.background = ggplot2::element_blank()) +
+    ggplot2::theme(strip.background = ggplot2::element_rect(fill = "grey80")) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(), plot.background = ggplot2::element_blank())
 
   if(!is.na(facet_column)){
-    checkmate::assert(!checkmate::test_null(mutalisk_dataframe[[facet_column]]))
-    checkmate::assert_number(facet_ncol)
-
-    gg <- gg + ggplot2::facet_wrap(facets = facet_column, ncol = facet_ncol, scales = "free_y")
+    checkmate::assert_choice(facet_column, choices = names(mutalisk_dataframe))
+    gg <- gg + ggplot2::facet_grid(rows  = ggplot2::vars(!!dplyr::sym(facet_column)), scales = "free", space = "free")
   }
 
   mutalisk_dataframe_metadata_column_message(mutalisk_dataframe)
 
-      return(gg)
+  return(gg)
 }
-
-#' Cohort-Level Mutational Signature Visualisation
-#'
-#' @inherit plot_stacked_bar
-#'
-#' @return plotly visualisation
-plot_stacked_bar_interactive <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, legend="top"){
-  plotly::ggplotly(plot_stacked_bar(mutalisk_dataframe, lump_type = lump_type, lump_min=lump_min, topn = topn, legend=legend)) %>%
-    return()
-}
-
 
 #' Plot Signature-Level Dotplot
 #' Plots a signature-Level dotplot
@@ -245,6 +246,8 @@ mutalisk_dataframe_expand <- function(mutalisk_dataframe){
     return()
 }
 
+
+# Metadata ----------------------------------------------------------------
 #' Add sample metadata
 #'
 #' Add sample metadata to mutalisk
@@ -275,7 +278,7 @@ mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata)
 #' Adds metadata from a file to the mutalisk dataframe
 #'
 #' @inherit plot_stacked_bar
-#' @param sample_metadata_file path to csv file. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)
+#' @param metadata_file path to csv or tsv file. Must contain a header line which contains a SampleID column (or Tumor_Sample_Barcode) that matches that of mutalisk_dataframe (string)
 #'
 #' @return mutalisk dataframe with metadata columns (data.frame)
 #' @export
@@ -283,7 +286,8 @@ mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata)
 mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metadata_file){
   checkmate::assert_file_exists(metadata_file, access = "r")
 
-  metadata_df <- read.csv(file = metadata_file, header = TRUE)
+  metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
+  names(metadata_df) <- names(metadata_df) %>% sub(pattern = "^Tumor_Sample_Barcode$", replacement = "SampleID", x = .)
   checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata_file))
   mutalisk_dataframe_add_metadata(mutalisk_dataframe, metadata_df)
 }
@@ -309,3 +313,14 @@ mutalisk_dataframe_metadata_column_message <- function(mutalisk_dataframe){
 }
 
 
+
+# Colors ------------------------------------------------------------------
+
+
+colors=c("#84005e","#7ef631","#4913c1","#a7f915","#2d00a1","#01fa76","#ba58ff","#5ec400","#0053e8","#cae401","#9672ff","#beff53","#880095","#edff4d","#001f7a","#bcc700","#b4009a","#2affbd","#ff1f96","#00b150","#ff2b36","#00e0b1","#ff4c22","#29f5ff","#b90033","#8dffa2","#590062","#bdff8e","#320040","#ffd841","#0277e4","#fcae00","#54aeff","#7aa300","#d39cff","#018a20","#ff9ef8","#295500","#ff87c4","#003a00","#f0bfff","#002e0d","#ff9943","#06002d","#fdff9c","#2e0023","#b8ffb8","#a0004c","#00e8d3","#990035","#b1ffdb","#780012","#90e6ff","#932600","#01b1c1","#9e4f00","#87caff","#a27300","#015f9d","#ffe080","#003062","#e1ffbb","#001020","#fff9c7","#0b0f00","#ffeacf","#570009","#00a68a","#ff946d","#004348","#ff969c","#006c49","#abb4ff","#676900","#e1e1ff","#381900","#ffe5e5","#5f4900","#007d8d","#ffbab8")
+
+#colors_v3_signatures = colors[1:77] %>% setNames()
+
+custom_pallete=function(n){
+  return(colors[1:n])
+}

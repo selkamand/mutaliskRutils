@@ -7,7 +7,12 @@
 mutalisk_dataframe_add_metadata(mutalisk_dataframe, sample_metadata)
 }
 \arguments{
-\item{mutalisk_dataframe}{a dataframe produced using mutalisk_to_dataframe}
+\item{mutalisk_dataframe}{a dataframe that can be produced using mutalisk_best_signature_directory_to_dataframe. Can also just make it yourself, if you want to visualise non-mutalisk data. Dataframe just needs 3 columns:
+\enumerate{
+\item \strong{SampleID}: a sample identifier.
+\item \strong{Signatures}: an identifier for a particular signature.
+\item \strong{Contributions}: the percentage contribution of the signature to the patients genetic profile (0.1 = 10\%).
+}}
 
 \item{sample_metadata}{a dataframe containing a SampleID column and additional columns for each property you want to add as metadata (data.frame)}
 }
