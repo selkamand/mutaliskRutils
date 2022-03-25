@@ -292,14 +292,14 @@ mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metad
   if(is.character(metadata)){
     message("Metadata provided as a filepath ... checking if file exists")
     checkmate::assert_file_exists(metadata, access = "r")
-    message("    > File exists")
+    message("    > Metadata file exists")
+    metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
   }
   else if(is.data.frame(metadata)){
     message("Metadata provided as a data.frame")
     metadata_df <- metadata
   }
 
-  metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
   names(metadata_df) <- names(metadata_df) %>% sub(pattern = "^Tumor_Sample_Barcode$", replacement = "SampleID", x = .)
   checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata))
   mutalisk_dataframe_add_metadata(mutalisk_dataframe, metadata_df)
