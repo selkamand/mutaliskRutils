@@ -11,11 +11,7 @@ mutalisk_best_signature_directory_to_dataframe(directory, metadata = NA)
 To obtain, run your VCFs through mutalisk. Select Mutational Signature (Best only) and click 'Get the selected result for all samples at once'.
 Then unzip the file, and youre ready to go}
 
-<<<<<<< HEAD
-\item{metadata_file}{path to csv or tsv file. Must contain a header line which contains a SampleID column (or Tumor_Sample_Barcode) that matches that of mutalisk_dataframe (string)}
-=======
 \item{metadata}{Either a path to csv file OR a dataframe. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)}
->>>>>>> 06f54cbb2b0a9457ff947d04cb13457193015208
 }
 \value{
 tibble

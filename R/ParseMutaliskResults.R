@@ -255,7 +255,7 @@ mutalisk_dataframe_expand <- function(mutalisk_dataframe){
 # Metadata ----------------------------------------------------------------
 #' Add sample metadata
 #'
-#' Add sample metadata to mutalisk
+#' Add sample metadata from dataframe to mutalisk data.frame
 #'
 #' @inherit plot_stacked_bar
 #' @param sample_metadata a dataframe containing a SampleID column and additional columns for each property you want to add as metadata (data.frame)
@@ -283,11 +283,7 @@ mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata)
 #' Adds metadata from a file to the mutalisk dataframe
 #'
 #' @inherit plot_stacked_bar
-<<<<<<< HEAD
-#' @param metadata_file path to csv or tsv file. Must contain a header line which contains a SampleID column (or Tumor_Sample_Barcode) that matches that of mutalisk_dataframe (string)
-=======
 #' @param metadata Either a path to csv file OR a dataframe. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)
->>>>>>> 06f54cbb2b0a9457ff947d04cb13457193015208
 #'
 #' @return mutalisk dataframe with metadata columns (data.frame)
 #' @export
@@ -296,7 +292,6 @@ mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metad
   if(is.character(metadata)){
     message("Metadata provided as a filepath ... checking if file exists")
     checkmate::assert_file_exists(metadata, access = "r")
-    metadata_df <- read.csv(file = metadata, header = TRUE)
     message("    > File exists")
   }
   else if(is.data.frame(metadata)){
@@ -304,14 +299,9 @@ mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metad
     metadata_df <- metadata
   }
 
-
-<<<<<<< HEAD
   metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
   names(metadata_df) <- names(metadata_df) %>% sub(pattern = "^Tumor_Sample_Barcode$", replacement = "SampleID", x = .)
-  checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata_file))
-=======
   checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata))
->>>>>>> 06f54cbb2b0a9457ff947d04cb13457193015208
   mutalisk_dataframe_add_metadata(mutalisk_dataframe, metadata_df)
 }
 

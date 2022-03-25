@@ -20,5 +20,5 @@ mutalisk_dataframe_add_metadata(mutalisk_dataframe, sample_metadata)
 mutalisk dataframe with additional metadata columns (data.frame)
 }
 \description{
-Add sample metadata to mutalisk
+Add sample metadata from dataframe to mutalisk data.frame
 }
