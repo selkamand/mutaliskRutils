@@ -68,15 +68,19 @@ extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
 #' @return tibble
 #' @export
 #'
-mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata_file = NA){
+mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata = NA){
  checkmate::assert_directory_exists(directory)
 
   filenames = dir(full.names = TRUE, path = directory, pattern = "mutalisk_input.*\\.txt$")
 
   df = mutalisk_to_dataframe(filenames)
 
-  if(!is.na(metadata_file)){
-    df = mutalisk_dataframe_inform_user_of_metadata(df, metadata_file)
+  if(!is.na(metadata)){
+    df = mutalisk_dataframe_inform_user_of_metadata(df, metadata)
+  }
+
+  if(nrow(df) == 0) {
+    stop("Failed to find mutalisk files inside directory. Are you sure this is the appropriate mutalisk output?")
   }
 
 
@@ -129,6 +133,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
 
   if (lump_type == "min_prop") {
     checkmate::assert_number(x = lump_min)
+
     message("Lumping together signatures with contributions < ", lump_min)
     mutalisk_dataframe <- mutalisk_dataframe %>%
       dplyr::group_by(SampleID) %>%
@@ -278,17 +283,35 @@ mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata)
 #' Adds metadata from a file to the mutalisk dataframe
 #'
 #' @inherit plot_stacked_bar
+<<<<<<< HEAD
 #' @param metadata_file path to csv or tsv file. Must contain a header line which contains a SampleID column (or Tumor_Sample_Barcode) that matches that of mutalisk_dataframe (string)
+=======
+#' @param metadata Either a path to csv file OR a dataframe. Must contain a header line which contains a SampleID column that matches that of mutalisk_dataframe (string)
+>>>>>>> 06f54cbb2b0a9457ff947d04cb13457193015208
 #'
 #' @return mutalisk dataframe with metadata columns (data.frame)
 #' @export
-#'
-mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metadata_file){
-  checkmate::assert_file_exists(metadata_file, access = "r")
+mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metadata){
 
+  if(is.character(metadata)){
+    message("Metadata provided as a filepath ... checking if file exists")
+    checkmate::assert_file_exists(metadata, access = "r")
+    metadata_df <- read.csv(file = metadata, header = TRUE)
+    message("    > File exists")
+  }
+  else if(is.data.frame(metadata)){
+    message("Metadata provided as a data.frame")
+    metadata_df <- metadata
+  }
+
+
+<<<<<<< HEAD
   metadata_df <- data.table::fread(file = metadata_file, header = TRUE)
   names(metadata_df) <- names(metadata_df) %>% sub(pattern = "^Tumor_Sample_Barcode$", replacement = "SampleID", x = .)
   checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata_file))
+=======
+  checkmate::assert_names(colnames(metadata_df), must.include = "SampleID", .var.name = paste0("Metadata File Header: ", metadata))
+>>>>>>> 06f54cbb2b0a9457ff947d04cb13457193015208
   mutalisk_dataframe_add_metadata(mutalisk_dataframe, metadata_df)
 }
 
@@ -309,7 +332,7 @@ mutalisk_dataframe_metadata_column_names <- function(mutalisk_dataframe){
 
 mutalisk_dataframe_metadata_column_message <- function(mutalisk_dataframe){
   col_names = mutalisk_dataframe_metadata_column_names(mutalisk_dataframe)
-  message("Metadata columns: ", ifelse(length(col_names) ==0, "none. To add metadata, use the metadata_file argument of `mutalisk_best_signature_directory_to_dataframe`", paste(col_names, collapse = ", ")))
+  message("Metadata columns: ", ifelse(length(col_names) ==0, "none. To add metadata, use the metadata argument of `mutalisk_best_signature_directory_to_dataframe`", paste(col_names, collapse = ", ")))
 }
 
 
