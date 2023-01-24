@@ -114,64 +114,68 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata =
 #' @param fontsize_axis_title fontsize of axis titles (number)
 #' @return a ggplot (gg)
 #' @export
-plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, sort_samples_by_sig = NA, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, facet_column = NA, fontsize_strip = 18, fontsize_axis_title = 18){
+plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, sort_samples_by_sig = NA, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, color_of_other = "grey60", facet_column = NA, fontsize_strip = 18, fontsize_axis_title = 18){
   checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
   checkmate::assert_number(fontsize_strip)
   checkmate::assert_number(fontsize_axis_title)
+  if(lump_type != "min_prop") stop("Other lump_types are not currently supported")
 
   if(is.na(legend_direction))
     legend_direction = ifelse(legend=="right" | legend == "left", yes = "vertical", no = "horizontal")
   else
     checkmate::assert_choice(legend_direction, choices = c("horizontal", "vertical"))
 
-  #Group Variables
+  #Ungroup Variables
   mutalisk_dataframe <- mutalisk_dataframe %>%
-    dplyr::ungroup() %>%
-    dplyr::group_by(SampleID)
+    dplyr::ungroup()
 
   if (lump_type == "min_prop") {
     checkmate::assert_number(x = lump_min)
 
-    message("Lumping together signatures with contributions < ", lump_min)
+    message("Lumping together signatures with contributions < ", lump_min, " in all samples as 'Other'")
     mutalisk_dataframe <- mutalisk_dataframe %>%
-      dplyr::group_by(SampleID) %>%
-      dplyr::mutate(
-        Signatures = forcats::fct_lump_min(Signatures, w = Contributions, min = lump_min)
-      )
+      dplyr::group_by(Signatures) %>%
+      dplyr::mutate(SignaturesAllContributionsBelowMin = all(Contributions < lump_min)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(Signatures = ifelse(SignaturesAllContributionsBelowMin, yes="Other", no = as.character(Signatures)))
+
+    #return(mutalisk_dataframe)
     mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
       forcats::fct_relevel("Other", after = Inf) %>%
       droplevels()
   }
 
-  if (lump_type == "topn") {
-    checkmate::assert_number(x = topn, finite = TRUE)
-    message(
-      "Lumping together all signatures except those with the ",
-      topn ,
-      " greatest contributions"
-    )
-    mutalisk_dataframe <- mutalisk_dataframe %>%
-      dplyr::group_by(SampleID) %>%
-      dplyr::mutate(
-        Signatures = forcats::fct_lump_n(Signatures, w = Contributions, n = topn)
-      )
-    mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
-      forcats::fct_relevel("Other", after = Inf) %>%
-      droplevels()
-  }
-
-  if (lump_type == "none") {
-    message("No signatures will be lumped together as 'other'. All signatures in a mutalisk 'best fit' set will be shown.")
-  }
+  # if (lump_type == "topn") {
+  #   checkmate::assert_number(x = topn, finite = TRUE)
+  #   message(
+  #     "Lumping together all signatures except those with the ",
+  #     topn ,
+  #     " greatest contributions"
+  #   )
+  #   mutalisk_dataframe <- mutalisk_dataframe %>%
+  #     dplyr::group_by(SampleID) %>%
+  #     dplyr::mutate(
+  #       Signatures = forcats::fct_lump_n(Signatures, w = Contributions, n = topn)
+  #     )
+  # }
+  #
+  # if (lump_type == "none") {
+  #   message("No signatures will be lumped together as 'other'. All signatures in a mutalisk 'best fit' set will be shown.")
+  # }
 
   #Reorder signature levels by contribution size:
   mutalisk_dataframe <- mutalisk_dataframe %>%
     dplyr::ungroup() %>%
     dplyr::mutate(Signatures = forcats::fct_reorder(Signatures, Contributions, .desc = TRUE))
 
-  #browser()
+  if ("Other" %in% levels(mutalisk_dataframe$Signatures)){
+    mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
+      forcats::fct_relevel("Other", after = Inf) %>%
+      droplevels()
+  }
+
   gg = mutalisk_dataframe %>% ggplot2::ggplot() +
     ggplot2::geom_col(
       ggplot2::aes(
@@ -183,7 +187,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
     ggplot2::xlab("Contribution") +
     ggplot2::scale_fill_manual(
       values = c(
-        pal(n = nlevels(mutalisk_dataframe$Signatures) - 1),"Grey"
+        pal(n = nlevels(mutalisk_dataframe$Signatures) - 1),color_of_other
       )
     ) +
     ggplot2::labs(fill = "Signature") +
@@ -331,8 +335,27 @@ mutalisk_dataframe_metadata_column_message <- function(mutalisk_dataframe){
 
 
 colors=c("#84005e","#7ef631","#4913c1","#a7f915","#2d00a1","#01fa76","#ba58ff","#5ec400","#0053e8","#cae401","#9672ff","#beff53","#880095","#edff4d","#001f7a","#bcc700","#b4009a","#2affbd","#ff1f96","#00b150","#ff2b36","#00e0b1","#ff4c22","#29f5ff","#b90033","#8dffa2","#590062","#bdff8e","#320040","#ffd841","#0277e4","#fcae00","#54aeff","#7aa300","#d39cff","#018a20","#ff9ef8","#295500","#ff87c4","#003a00","#f0bfff","#002e0d","#ff9943","#06002d","#fdff9c","#2e0023","#b8ffb8","#a0004c","#00e8d3","#990035","#b1ffdb","#780012","#90e6ff","#932600","#01b1c1","#9e4f00","#87caff","#a27300","#015f9d","#ffe080","#003062","#e1ffbb","#001020","#fff9c7","#0b0f00","#ffeacf","#570009","#00a68a","#ff946d","#004348","#ff969c","#006c49","#abb4ff","#676900","#e1e1ff","#381900","#ffe5e5","#5f4900","#007d8d","#ffbab8")
-
+short_color_set = c("8d2824","3c8dbd","ffd166","06d6a0","fffcf9")
 #colors_v3_signatures = colors[1:77] %>% setNames()
+
+#' Custom Palette
+#'
+#' @param n number of colors in pallete to return
+#'
+#' @return character vector of colors
+#' @export
+#'
+#' @examples
+#' pallette_cols23_customised(2)
+pallette_cols23_customised <- function(n) {
+  # derived from pals::cols25
+  colors=c("#E84141","#1F78C8", "#778B00", "#6A33C2", "#ff7f00",
+    "#FFD700", "#a6cee3", "#FB6496", "#b2df8a", "#CAB2D6", "#FDBF6F", "#EEE685", "#C8308C", "#FF83FA", "#C814FA", "#0000FF",
+    "#36648B", "#00E2E5", "#00FF00", "#33a02c", "#BEBE00", "#8B3B00",
+    "#A52A3C")
+  checkmate::assert_number(n, upper = length(colors), lower = 1)
+  return(colors[1:n])
+}
 
 custom_pallete=function(n){
   return(colors[1:n])

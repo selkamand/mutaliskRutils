@@ -25,5 +25,6 @@ Imports:
     pals,
     plotly,
     purrr,
+    readr,
     stats,
     tidyr
