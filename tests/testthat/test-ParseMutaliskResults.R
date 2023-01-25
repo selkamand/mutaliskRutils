@@ -4,12 +4,23 @@ test_that("mutalisk_to_dataframe works", {
   expect_snapshot(df_mutalisk)
 })
 
+test_that("extract_sample_names_from_mutalisk_filenames works ",{
+    expected <- c("TCGA-66-2789", "TCGA-66-2791", "TCGA-66-2792", "TCGA-66-2793",
+      "TCGA-66-2794", "TCGA-66-2795", "TCGA-66-2800", "TCGA-70-6722",
+      "TCGA-70-6723", "TCGA-85-6175", "TCGA-85-6560", "TCGA-85-6561"
+    )
+
+    observed <- extract_sample_names_from_mutalisk_filenames(mutalisk_files)
+
+    expect_equal(observed, expected)
+})
+
 test_that("mutalisk_to_dataframe works with sample_names specified", {
   mutalisk_files <- dir(system.file("mutalisk_lusc_tcga",package = "mutalisk"), pattern = "\\.txt$", full.names = TRUE)
   df_mutalisk_to_dataframe_samplenames <- mutalisk_to_dataframe(mutalisk_files)
   observed_sample_names <- sort(unique(df_mutalisk_to_dataframe_samplenames[['SampleID']]))
 
-  sample_names <- mutalisk::extract_sample_names_from_mutalisk_filenames(mutalisk_files)
+  sample_names <- extract_sample_names_from_mutalisk_filenames(mutalisk_files)
   expected_sample_names = sort(unique(sample_names))
 
   expect_equal(observed_sample_names, expected_sample_names)
