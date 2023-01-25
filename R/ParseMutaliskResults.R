@@ -26,7 +26,7 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_names_from
   sig_contributions_s = sig_contributions_s %>% strsplit(" ") %>% unlist()
   sig_contributions_n = sig_contributions_s[-1] %>% as.numeric()
 
-  if(sample_names_from_file_contents)
+  if(!sample_names_from_file_contents)
     patient_id_s = extract_sample_names_from_mutalisk_filenames(mutalisk_file)
   else
     patient_id_s = extract_sample_names_from_mutalisk_files(mutalisk_file)
