@@ -8,13 +8,26 @@ test_that("extract_sample_names_from_mutalisk_filenames works ",{
   mutalisk_files <- dir(system.file("lusc_tcga",package = "mutalisk"), pattern = "\\.txt$", full.names = TRUE)
     expected <- c("TCGA-66-2789", "TCGA-66-2791", "TCGA-66-2792", "TCGA-66-2793",
       "TCGA-66-2794", "TCGA-66-2795", "TCGA-66-2800", "TCGA-70-6722",
-      "TCGA-70-6723", "TCGA-85-6175", "TCGA-85-6560", "TCGA-85-6561"
-    )
+      "TCGA-70-6723", "TCGA-85-6175", "TCGA-85-6560", "TCGA-85-6561")
 
     observed <- extract_sample_names_from_mutalisk_filenames(mutalisk_files)
 
     expect_equal(observed, expected)
 })
+
+
+test_that("extract_sample_names_from_mutalisk_files works",{
+  mutalisk_files <- dir(system.file("lusc_tcga",package = "mutalisk"), pattern = "\\.txt$", full.names = TRUE)
+  expected <- c("TCGA-66-2789", "TCGA-66-2791", "TCGA-66-2792", "TCGA-66-2793",
+                "TCGA-66-2794", "TCGA-66-2795", "TCGA-66-2800", "TCGA-70-6722",
+                "TCGA-70-6723", "TCGA-85-6175", "TCGA-85-6560", "TCGA-85-6561")
+
+  observed <- extract_sample_names_from_mutalisk_files(mutalisk_files)
+
+  expect_equal(observed, expected)
+})
+
+
 
 test_that("mutalisk_to_dataframe works with sample_names specified", {
   mutalisk_files <- dir(system.file("lusc_tcga",package = "mutalisk"), pattern = "\\.txt$", full.names = TRUE)
@@ -26,6 +39,7 @@ test_that("mutalisk_to_dataframe works with sample_names specified", {
 
   expect_equal(observed_sample_names, expected_sample_names)
 })
+
 
 test_that("mutalisk_best_signature_directory_to_dataframe works", {
   mutalisk_dir <- system.file("lusc_tcga",package = "mutalisk")

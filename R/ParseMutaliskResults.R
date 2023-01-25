@@ -75,7 +75,6 @@ mutalisk_to_dataframe <- function(mutalisk_files, sample_names = NULL){
 #' @param mutalisk_filenames names of mutalisk output files (character)
 #'
 #' @return sample name (string)
-#' @export
 extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
   assertions::assert_character(mutalisk_filenames)
 
@@ -83,6 +82,27 @@ extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
     sub(pattern = ".*mutalisk_input_(.*?)\\..*$", replacement = "\\1", x =  mutalisk_filenames) %>%
     sub(pattern = "(.*)_.*$", replacement = "\\1", x = .) %>%
     return()
+}
+
+#' Sample Names From Mutalisk File Contents
+#' @param mutalisk_filenames names of mutalisk output files (character)
+#'
+#' @return sample name (string)
+extract_sample_names_from_mutalisk_files <- function(mutalisk_filenames){
+  ###./uploads/mutalisk_input_TCGA-66-2789.HcQhu3ih8e_whole_sig.txt
+
+  sample_names <- vapply(
+    mutalisk_filenames,
+
+    function(filename){
+      secondline <- readLines(filename, n = 2)[[2]]
+      sample_name <- secondline %>%
+        sub(pattern = ".*mutalisk_input_(.*?)\\/*$", replacement = "\\1", x =  .) %>%
+        sub(pattern = "(.*?)\\..*$", replacement = "\\1", x = .)
+      return(sample_name)
+  }, FUN.VALUE = character(1))
+
+  unname(sample_names)
 }
 
 #' Mutalisk directory to dataframe
