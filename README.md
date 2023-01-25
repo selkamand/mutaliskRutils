@@ -44,13 +44,17 @@ First you have to generate mutalisk file:
 
 3.  Then click `Get the selected result for all samples at once`
 
-4.  Unzip the file. This mutalisk directory can
+4.  Unzip the file
+
+5.  Parse the directory with
+    `mutalisk_best_signature_directory_to_dataframe` and plot with
+    `plot_stacked_bar`
 
 ``` r
 library(mutalisk)
 
 # Read files in mutalisk_dir into 
-mutalisk_dir <- system.file("lusc_tcga",package = "mutalisk")
+mutalisk_dir <- system.file("lusc_tcga", package = "mutalisk")
 mutalisk_df <- mutalisk_best_signature_directory_to_dataframe(mutalisk_dir)
 
 # Plot Cohort Data
