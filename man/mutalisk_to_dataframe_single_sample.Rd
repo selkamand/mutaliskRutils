@@ -4,12 +4,15 @@
 \alias{mutalisk_to_dataframe_single_sample}
 \title{Mutalisk to dataframe}
 \usage{
-mutalisk_to_dataframe_single_sample(mutalisk_file, sample_name = NULL)
+mutalisk_to_dataframe_single_sample(
+  mutalisk_file,
+  sample_names_from_file_contents = FALSE
+)
 }
 \arguments{
 \item{mutalisk_file}{a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort}
 
-\item{sample_name}{name of the mutalisk sample described by the mutalisk file (string). If not supplied, guesses from sample name}
+\item{sample_names_from_file_contents}{guess sample names from filecontents instead of filenames (flag)}
 }
 \value{
 tibble

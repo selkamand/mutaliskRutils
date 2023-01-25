@@ -29,9 +29,9 @@ test_that("extract_sample_names_from_mutalisk_files works",{
 
 
 
-test_that("mutalisk_to_dataframe works with sample_names specified", {
+test_that("mutalisk_to_dataframe works with sample_names from files", {
   mutalisk_files <- dir(system.file("lusc_tcga",package = "mutalisk"), pattern = "\\.txt$", full.names = TRUE)
-  df_mutalisk_to_dataframe_samplenames <- mutalisk_to_dataframe(mutalisk_files)
+  df_mutalisk_to_dataframe_samplenames <- mutalisk_to_dataframe(mutalisk_files, sample_names_from_file_contents = TRUE)
   observed_sample_names <- sort(unique(df_mutalisk_to_dataframe_samplenames[['SampleID']]))
 
   sample_names <- extract_sample_names_from_mutalisk_filenames(mutalisk_files)

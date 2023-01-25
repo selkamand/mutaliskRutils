@@ -7,11 +7,11 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("."))
 #' See ?mutalisk_to_dataframe
 #'
 #' @param mutalisk_file a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
-#' @param sample_name name of the mutalisk sample described by the mutalisk file (string). If not supplied, guesses from sample name
+#' @param sample_names_from_file_contents  guess sample names from filecontents instead of filenames (flag)
 #'
 #' @return tibble
 #' @importFrom rlang .data
-mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NULL){
+mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_names_from_file_contents = FALSE){
   mutfile_v = readLines(mutalisk_file)
 
   #browser()
@@ -26,12 +26,11 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NUL
   sig_contributions_s = sig_contributions_s %>% strsplit(" ") %>% unlist()
   sig_contributions_n = sig_contributions_s[-1] %>% as.numeric()
 
-  if(is.null(sample_name))
+  if(sample_names_from_file_contents)
     patient_id_s = extract_sample_names_from_mutalisk_filenames(mutalisk_file)
-  else{
-    assertions::assert_string(sample_name)
-    patient_id_s = sample_name
-  }
+  else
+    patient_id_s = extract_sample_names_from_mutalisk_files(mutalisk_file)
+
 
   data.frame(SampleID = rep(patient_id_s, times = length(sig_numbers_f)), Signatures = sig_numbers_f, Contributions =  sig_contributions_n) %>%
     dplyr::tibble()
@@ -40,7 +39,7 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NUL
 #' Mutalisk files to dataframe
 #'
 #' @param mutalisk_files a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
-#' @param sample_names a vector of sample names
+#' @param sample_names_from_file_contents guess sample names from filecontents instead of filenames (flag)
 #' @return  a dataframe containing three columns:
 #' \enumerate{
 #' \item \strong{SampleID}: a sample identifier.
@@ -49,19 +48,16 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NUL
 #' }
 #' @export
 #'
-mutalisk_to_dataframe <- function(mutalisk_files, sample_names = NULL){
+mutalisk_to_dataframe <- function(mutalisk_files, sample_names_from_file_contents = FALSE){
   assertions::assert_file_exists(mutalisk_files)
-  if(!is.null(sample_names)){
-    assertions::assert_string(sample_names)
-    assertions::assert_equal(length(sample_names), length(mutalisk_files))
-  }
+  assertions::assert_flag(sample_names_from_file_contents)
 
   mutalisk_ls <- purrr::map(
     seq_along(mutalisk_files),
     function(i){
       mutalisk_to_dataframe_single_sample(
         mutalisk_file = mutalisk_files[i],
-        sample_name = if(is.null(sample_names)) NULL else sample_names[i]
+        sample_names_from_file_contents = sample_names_from_file_contents
         )
     }
   )
