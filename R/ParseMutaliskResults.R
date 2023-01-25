@@ -1,3 +1,5 @@
+# declarations
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("."))
 
 #' Mutalisk to dataframe
 #'
@@ -5,9 +7,10 @@
 #' See ?mutalisk_to_dataframe
 #'
 #' @param mutalisk_file a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
+#' @param sample_name name of the mutalisk sample described by the mutalisk file (string). If not supplied, guesses from sample name
 #'
 #' @return tibble
-#'
+#' @importFrom rlang .data
 mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NULL){
   mutfile_v = readLines(mutalisk_file)
 
@@ -75,6 +78,7 @@ mutalisk_to_dataframe <- function(mutalisk_files, sample_names = NULL){
 #' @export
 extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
   assertions::assert_character(mutalisk_filenames)
+
   basename(mutalisk_filenames) %>%
     sub(pattern = ".*mutalisk_input_(.*?)\\..*$", replacement = "\\1", x =  mutalisk_filenames) %>%
     sub(pattern = "(.*)_.*$", replacement = "\\1", x = .) %>%
@@ -117,6 +121,7 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata =
 #' Cohort-Level Mutational Signature Visualisation
 #'
 #' A note of warning: for different mutalisk runs, this function will not enforce uniform colours for a single mutational signature. Better to get all data in at once and add a facet_wrap call
+#' @importFrom pals kovesi.diverging_rainbow_bgymr_45_85_c67
 #'
 #' @param mutalisk_dataframe a dataframe that can be produced using mutalisk_best_signature_directory_to_dataframe. Can also just make it yourself, if you want to visualise non-mutalisk data. Dataframe just needs 3 columns:
 #' \enumerate{
@@ -135,10 +140,16 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata =
 #' @param pal Palette to use for generating colours.
 #' @param facet_column name of column to use for faceting (string)
 #' @param fontsize_strip fontsize of facet titles (number)
+#' @param color_of_other colour of signatures lumped into 'other' (string)
 #' @param fontsize_axis_title fontsize of axis titles (number)
+#'
 #' @return a ggplot (gg)
 #' @export
-plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, sort_samples_by_sig = NA, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, color_of_other = "grey60", facet_column = NA, fontsize_strip = 18, fontsize_axis_title = 18){
+plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1,
+                             topn = 5, legend="right",
+                             legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67,
+                             color_of_other = "grey60", facet_column = NA, fontsize_strip = 18,
+                             fontsize_axis_title = 18){
   assertions::assert_names_include(mutalisk_dataframe, names = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
@@ -161,16 +172,19 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
 
     message("Lumping together signatures with contributions < ", lump_min, " in all samples as 'Other'")
     mutalisk_dataframe <- mutalisk_dataframe %>%
-      dplyr::group_by(Signatures) %>%
-      dplyr::mutate(SignaturesAllContributionsBelowMin = all(Contributions < lump_min)) %>%
+      dplyr::group_by(.data[["Signatures"]]) %>%
+      dplyr::mutate(SignaturesAllContributionsBelowMin = all(.data[["Contributions"]] < lump_min)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(Signatures = ifelse(SignaturesAllContributionsBelowMin, yes="Other", no = as.character(Signatures)))
+      dplyr::mutate(Signatures = ifelse(.data[['SignaturesAllContributionsBelowMin']], yes="Other", no = as.character(.data[['Signatures']])))
 
     #return(mutalisk_dataframe)
     mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
       forcats::fct_relevel("Other", after = Inf) %>%
       droplevels()
   }
+  else(
+    stop("lump type: ", lump_type, "is not yet supported")
+    )
 
   # if (lump_type == "topn") {
   #   checkmate::assert_number(x = topn, finite = TRUE)
@@ -193,7 +207,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
   #Reorder signature levels by contribution size:
   mutalisk_dataframe <- mutalisk_dataframe %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(Signatures = forcats::fct_reorder(Signatures, Contributions, .desc = TRUE))
+    dplyr::mutate(Signatures = forcats::fct_reorder(.data[['Signatures']], .data[['Contributions']], .desc = TRUE))
 
   if ("Other" %in% levels(mutalisk_dataframe$Signatures)){
     mutalisk_dataframe$Signatures <- mutalisk_dataframe$Signatures %>%
@@ -204,9 +218,9 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
   gg = mutalisk_dataframe %>% ggplot2::ggplot() +
     ggplot2::geom_col(
       ggplot2::aes(
-        y = SampleID,
-        x = Contributions,
-        fill = Signatures,
+        y = .data[['SampleID']],
+        x = .data[['Contributions']],
+        fill = .data[['Signatures']],
       ), position = "fill") +
     ggplot2::ylab("Sample") +
     ggplot2::xlab("Contribution") +
@@ -242,6 +256,8 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
 #' @export
 #'
 plot_signature_contribution_jitterplot <- function(mutalisk_dataframe){
+  requireNamespace("stats", quietly = TRUE)
+
   assertions::assert_names_include(mutalisk_dataframe, c("Signatures", "SampleID", "Contributions"))
 
   levels(mutalisk_dataframe$Signatures) <- gtools::mixedsort(levels((mutalisk_dataframe$Signatures)))
@@ -251,10 +267,10 @@ plot_signature_contribution_jitterplot <- function(mutalisk_dataframe){
   mutalisk_dataframe_metadata_column_message(mutalisk_dataframe)
 
   mutalisk_dataframe %>%
-    ggplot2::ggplot(ggplot2::aes(Signatures, Contributions)) +
+    ggplot2::ggplot(ggplot2::aes(.data[['Signatures']], .data[['Contributions']])) +
     ggplot2::geom_jitter(width = 0.1, alpha = 0.5) +
     ggplot2::stat_summary(
-      fun = median, fun.min = median, fun.max = median,
+      fun = stats::median, fun.min = stats::median, fun.max = stats::median,
       geom = "crossbar", color = "red", width = 0.7, lwd = 0.4) +
     ggplot2::theme_bw()
 }
@@ -276,7 +292,7 @@ mutalisk_dataframe_expand <- function(mutalisk_dataframe){
 
   #Make implicit missing values explicit
   mutalisk_dataframe %>%
-    tidyr::complete(Signatures, SampleID, fill = list(Contributions = 0)) %>%
+    tidyr::complete(.data[['Signatures']], .data[['SampleID']], fill = list(Contributions = 0)) %>%
     return()
 }
 
@@ -298,8 +314,8 @@ mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata)
 
   metadata_rows_orig=nrow(sample_metadata)
   sample_metadata <- sample_metadata %>%
-    dplyr::distinct(SampleID, .keep_all = TRUE) %>%
-    dplyr::filter(!is.na(SampleID))
+    dplyr::distinct(.data[["SampleID"]], .keep_all = TRUE) %>%
+    dplyr::filter(!is.na(.data[["SampleID"]]))
 
   if(metadata_rows_orig != nrow(sample_metadata))
     message("SampleID column in sample metadata table had duplicate SampleIDs or NA values. These have been removed")

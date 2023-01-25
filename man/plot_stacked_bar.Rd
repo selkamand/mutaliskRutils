@@ -9,7 +9,6 @@ plot_stacked_bar(
   lump_type = "min_prop",
   lump_min = 0.1,
   topn = 5,
-  sort_samples_by_sig = NA,
   legend = "right",
   legend_direction = NA,
   pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67,
@@ -41,6 +40,8 @@ plot_stacked_bar(
 \item{legend_direction}{How should the legend be oriented. By defualt will guess based on position of legend ("vertical", "horizontal")}
 
 \item{pal}{Palette to use for generating colours.}
+
+\item{color_of_other}{colour of signatures lumped into 'other' (string)}
 
 \item{facet_column}{name of column to use for faceting (string)}
 

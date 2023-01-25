@@ -1,7 +1,7 @@
 # mutalisk_to_dataframe works
 
     Code
-      df_mutalisk
+      df_mutalisk_to_dataframe
     Output
       # A tibble: 43 x 3
          SampleID     Signatures Contributions

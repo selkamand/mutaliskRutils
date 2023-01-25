@@ -8,6 +8,8 @@ mutalisk_to_dataframe_single_sample(mutalisk_file, sample_name = NULL)
 }
 \arguments{
 \item{mutalisk_file}{a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort}
+
+\item{sample_name}{name of the mutalisk sample described by the mutalisk file (string). If not supplied, guesses from sample name}
 }
 \value{
 tibble
