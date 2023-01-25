@@ -4,10 +4,12 @@
 \alias{mutalisk_to_dataframe}
 \title{Mutalisk files to dataframe}
 \usage{
-mutalisk_to_dataframe(mutalisk_files)
+mutalisk_to_dataframe(mutalisk_files, sample_names = NULL)
 }
 \arguments{
 \item{mutalisk_files}{a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort}
+
+\item{sample_names}{a vector of sample names}
 }
 \value{
 a dataframe containing three columns:

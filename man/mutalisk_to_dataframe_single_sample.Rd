@@ -4,7 +4,7 @@
 \alias{mutalisk_to_dataframe_single_sample}
 \title{Mutalisk to dataframe}
 \usage{
-mutalisk_to_dataframe_single_sample(mutalisk_file)
+mutalisk_to_dataframe_single_sample(mutalisk_file, sample_name = NULL)
 }
 \arguments{
 \item{mutalisk_file}{a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort}

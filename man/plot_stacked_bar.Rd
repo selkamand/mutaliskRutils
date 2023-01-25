@@ -13,6 +13,7 @@ plot_stacked_bar(
   legend = "right",
   legend_direction = NA,
   pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67,
+  color_of_other = "grey60",
   facet_column = NA,
   fontsize_strip = 18,
   fontsize_axis_title = 18

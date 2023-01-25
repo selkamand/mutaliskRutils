@@ -8,11 +8,12 @@
 #'
 #' @return tibble
 #'
-mutalisk_to_dataframe_single_sample <- function(mutalisk_file){
+mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_name = NULL){
   mutfile_v = readLines(mutalisk_file)
 
+  #browser()
   #Ensure file is mutalisk file
-  checkmate::assert_set_equal(mutfile_v[1], y ="#####SIGNATURE DECOMPOSITION REPORT", .var.name = paste0("First line of mutfile: ", mutalisk_file))
+  assertions::assert_identical(mutfile_v[1],y = "#####SIGNATURE DECOMPOSITION REPORT", msg = "Invalid mutalisk file. First line should be `#####SIGNATURE DECOMPOSITION REPORT`, not {arg_value}")
 
   sig_numbers_s = mutfile_v[grep(pattern = "\\*\\*THIS_SIGs ", x = mutfile_v)][1]
   sig_numbers_s = sig_numbers_s %>% strsplit(" ") %>% unlist()
@@ -22,7 +23,13 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file){
   sig_contributions_s = sig_contributions_s %>% strsplit(" ") %>% unlist()
   sig_contributions_n = sig_contributions_s[-1] %>% as.numeric()
 
-  patient_id_s = extract_sample_names_from_mutalisk_filenames(mutalisk_file)
+  if(is.null(sample_name))
+    patient_id_s = extract_sample_names_from_mutalisk_filenames(mutalisk_file)
+  else{
+    assertions::assert_string(sample_name)
+    patient_id_s = sample_name
+  }
+
   data.frame(SampleID = rep(patient_id_s, times = length(sig_numbers_f)), Signatures = sig_numbers_f, Contributions =  sig_contributions_n) %>%
     dplyr::tibble()
 }
@@ -30,7 +37,7 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file){
 #' Mutalisk files to dataframe
 #'
 #' @param mutalisk_files a vector of filepaths, each leading to the report.txt files output when downloading best_signature results for all vcfs in cohort
-#'
+#' @param sample_names a vector of sample names
 #' @return  a dataframe containing three columns:
 #' \enumerate{
 #' \item \strong{SampleID}: a sample identifier.
@@ -39,9 +46,26 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file){
 #' }
 #' @export
 #'
-mutalisk_to_dataframe <- function(mutalisk_files){
-  df=purrr::map_dfr(mutalisk_files,mutalisk_to_dataframe_single_sample)
-  return(df)
+mutalisk_to_dataframe <- function(mutalisk_files, sample_names = NULL){
+  assertions::assert_file_exists(mutalisk_files)
+  if(!is.null(sample_names)){
+    assertions::assert_string(sample_names)
+    assertions::assert_equal(length(sample_names), length(mutalisk_files))
+  }
+
+  mutalisk_ls <- purrr::map(
+    seq_along(mutalisk_files),
+    function(i){
+      mutalisk_to_dataframe_single_sample(
+        mutalisk_file = mutalisk_files[i],
+        sample_name = if(is.null(sample_names)) NULL else sample_names[i]
+        )
+    }
+  )
+  mutalisk_df <- purrr::list_rbind(mutalisk_ls)
+
+
+  return(mutalisk_df)
 }
 
 #' Sample Names From Mutalisk Output
@@ -50,7 +74,7 @@ mutalisk_to_dataframe <- function(mutalisk_files){
 #' @return sample name (string)
 #' @export
 extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
-  checkmate::assert_character(mutalisk_filenames)
+  assertions::assert_character(mutalisk_filenames)
   basename(mutalisk_filenames) %>%
     sub(pattern = ".*mutalisk_input_(.*?)\\..*$", replacement = "\\1", x =  mutalisk_filenames) %>%
     sub(pattern = "(.*)_.*$", replacement = "\\1", x = .) %>%
@@ -69,7 +93,7 @@ extract_sample_names_from_mutalisk_filenames  <- function(mutalisk_filenames){
 #' @export
 #'
 mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata = NA){
- checkmate::assert_directory_exists(directory)
+ assertions::assert_directory(directory)
 
   filenames = dir(full.names = TRUE, path = directory, pattern = "mutalisk_input.*\\.txt$")
 
@@ -115,11 +139,12 @@ mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata =
 #' @return a ggplot (gg)
 #' @export
 plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_min=0.1, topn = 5, sort_samples_by_sig = NA, legend="right", legend_direction = NA, pal = pals::kovesi.diverging_rainbow_bgymr_45_85_c67, color_of_other = "grey60", facet_column = NA, fontsize_strip = 18, fontsize_axis_title = 18){
-  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+  assertions::assert_names_include(mutalisk_dataframe, names = c("Signatures", "SampleID", "Contributions"))
   checkmate::assert_choice(x = lump_type, choices = c("min_prop", "topn", "none"))
   checkmate::assert_choice(x = legend, choices = c("top", "left", "bottom", "right"))
-  checkmate::assert_number(fontsize_strip)
-  checkmate::assert_number(fontsize_axis_title)
+  assertions::assert_number(fontsize_strip)
+  assertions::assert_number(fontsize_axis_title)
+
   if(lump_type != "min_prop") stop("Other lump_types are not currently supported")
 
   if(is.na(legend_direction))
@@ -132,7 +157,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
     dplyr::ungroup()
 
   if (lump_type == "min_prop") {
-    checkmate::assert_number(x = lump_min)
+    assertions::assert_number(x = lump_min)
 
     message("Lumping together signatures with contributions < ", lump_min, " in all samples as 'Other'")
     mutalisk_dataframe <- mutalisk_dataframe %>%
@@ -217,7 +242,7 @@ plot_stacked_bar <- function(mutalisk_dataframe, lump_type = "min_prop", lump_mi
 #' @export
 #'
 plot_signature_contribution_jitterplot <- function(mutalisk_dataframe){
-  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+  assertions::assert_names_include(mutalisk_dataframe, c("Signatures", "SampleID", "Contributions"))
 
   levels(mutalisk_dataframe$Signatures) <- gtools::mixedsort(levels((mutalisk_dataframe$Signatures)))
 
@@ -247,7 +272,7 @@ plot_signature_contribution_jitterplot <- function(mutalisk_dataframe){
 #' For cases where a signature was not included in the 'best fit' subset, Contribution is set to 0%.
 #'
 mutalisk_dataframe_expand <- function(mutalisk_dataframe){
-  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
+  assertions::assert_names_include(mutalisk_dataframe, names = c("Signatures", "SampleID", "Contributions"))
 
   #Make implicit missing values explicit
   mutalisk_dataframe %>%
@@ -268,8 +293,8 @@ mutalisk_dataframe_expand <- function(mutalisk_dataframe){
 #' @export
 #'
 mutalisk_dataframe_add_metadata <- function(mutalisk_dataframe, sample_metadata){
-  checkmate::assert_names(names(mutalisk_dataframe), must.include = c("Signatures", "SampleID", "Contributions"))
-  checkmate::assert_names(names(sample_metadata), must.include = c("SampleID"))
+  assertions::assert_names_include(mutalisk_dataframe, c("Signatures", "SampleID", "Contributions"))
+  assertions::assert_names_include(sample_metadata, c("SampleID"))
 
   metadata_rows_orig=nrow(sample_metadata)
   sample_metadata <- sample_metadata %>%
@@ -295,7 +320,9 @@ mutalisk_dataframe_inform_user_of_metadata <- function(mutalisk_dataframe, metad
 
   if(is.character(metadata)){
     message("Metadata provided as a filepath ... checking if file exists")
-    checkmate::assert_file_exists(metadata, access = "r")
+    assertions::assert_file_exists(metadata)
+    # Add assertion of read access
+
     message("    > Metadata file exists")
     metadata_df <- data.table::fread(file = metadata, header = TRUE)
   }
