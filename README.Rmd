@@ -33,7 +33,7 @@ You can install the development version of mutalisk from [GitHub](https://github
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("selkamand/mutalisk")
+remotes::install_github("selkamand/mutaliskRutils")
 ```
 
 ## Usage
