@@ -1,6 +1,6 @@
 ^renv$
 ^renv\.lock$
-^mutalisk\.Rproj$
+^mutaliskRutils\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
