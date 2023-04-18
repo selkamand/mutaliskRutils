@@ -16,20 +16,20 @@ knitr::opts_chunk$set(
 # mutalisk
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/selkamand/mutalisk/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/selkamand/mutalisk/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/selkamand/mutalisk/branch/main/graph/badge.svg)](https://app.codecov.io/gh/selkamand/mutalisk?branch=main)
-[![CRAN status](https://www.r-pkg.org/badges/version/mutalisk)](https://CRAN.R-project.org/package=mutalisk)
+[![R-CMD-check](https://github.com/selkamand/mutaliskRutils/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/selkamand/mutaliskRutils/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/selkamand/mutaliskRutils/branch/main/graph/badge.svg)](https://app.codecov.io/gh/selkamand/mutaliskRutils?branch=main)
+[![CRAN status](https://www.r-pkg.org/badges/version/mutaliskRutils)](https://CRAN.R-project.org/package=mutaliskRutils)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-mutalisk is an R package that produces cohort-level visualisations from the files output by [**mutalisk**](http://mutalisk.org/).
+mutaliskRutils is an R package that produces cohort-level visualisations from the files output by [**mutalisk**](http://mutalisk.org/).
 
 Note [CRUX](https://ccicb.shinyapps.io/crux/) is a GUI tool that makes it easy to export data in mutalisk compatible formats, and also provides a GUI interface to this package in the 'Mutational Signatures' module.
 For a no-code solution, consider using the web app.
 
 ## Installation
 
-You can install the development version of mutalisk from [GitHub](https://github.com/) with:
+You can install the development version of mutaliskRutils from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("remotes")

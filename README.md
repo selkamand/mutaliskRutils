@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# mutaliskRutils
+# mutalisk
 
 <!-- badges: start -->
 
@@ -14,8 +14,8 @@ status](https://www.r-pkg.org/badges/version/mutaliskRutils)](https://CRAN.R-pro
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-mutaliskRutils is an R package that produces cohort-level visualisations from
-the files output by [**mutalisk**](http://mutalisk.org/).
+mutaliskRutils is an R package that produces cohort-level visualisations
+from the files output by [**mutalisk**](http://mutalisk.org/).
 
 Note [CRUX](https://ccicb.shinyapps.io/crux/) is a GUI tool that makes
 it easy to export data in mutalisk compatible formats, and also provides
