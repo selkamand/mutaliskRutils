@@ -51,10 +51,10 @@ First you have to generate mutalisk file:
     `plot_stacked_bar`
 
 ``` r
-library(mutalisk)
+library(mutaliskRutils)
 
 # Read files in mutalisk_dir into 
-mutalisk_dir <- system.file("lusc_tcga", package = "mutalisk")
+mutalisk_dir <- system.file("lusc_tcga", package = "mutaliskRutils")
 mutalisk_df <- mutalisk_best_signature_directory_to_dataframe(mutalisk_dir)
 
 # Plot Cohort Data

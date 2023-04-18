@@ -113,7 +113,7 @@ extract_sample_names_from_mutalisk_files <- function(mutalisk_filenames){
 #' @export
 #'
 mutalisk_best_signature_directory_to_dataframe <- function(directory, metadata = NA){
- assertions::assert_directory(directory)
+ assertions::assert_directory_exists(directory)
 
   filenames = dir(full.names = TRUE, path = directory, pattern = "mutalisk_input.*\\.txt$")
 

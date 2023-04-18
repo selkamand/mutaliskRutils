@@ -1,4 +1,4 @@
 library(testthat)
-library(mutalisk)
+library(mutaliskRutils)
 
-test_check("mutalisk")
+test_check("mutaliskRutils")
