@@ -49,7 +49,7 @@ mutalisk_to_dataframe_single_sample <- function(mutalisk_file, sample_names_from
 #' @export
 #'
 mutalisk_to_dataframe <- function(mutalisk_files, sample_names_from_file_contents = FALSE){
-  assertions::assert_file_exists(mutalisk_files)
+  assertions::assert_all_files_exist(mutalisk_files)
   assertions::assert_flag(sample_names_from_file_contents)
 
   mutalisk_ls <- purrr::map(
